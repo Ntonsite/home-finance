@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Household {
+  id          String            @id @default(uuid())
+  name        String
+  members     HouseholdMember[]
+  categories  Category[]
+  expenses    Expense[]
+  budgets     Budget[]
+  invitations Invitation[]
+  createdAt   DateTime          @default(now())
+}
+
+model HouseholdMember {
+  id          Int       @id @default(autoincrement())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String    // OWNER, ADMIN, MEMBER
+  joinedAt    DateTime  @default(now())
+
+  @@unique([householdId, userId])
+}
+
+model User {
+  id          Int               @id @default(autoincrement())
+  name        String?
+  username    String            @unique
+  email       String?           @unique
+  password    String
+  memberships HouseholdMember[]
+  addedExpenses Expense[]       @relation("ExpenseAddedBy")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Invitation {
+  id          Int       @id @default(autoincrement())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  email       String
+  role        String    // OWNER, ADMIN, MEMBER
+  token       String    @unique
+  expiresAt   DateTime
+  accepted    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@unique([householdId, email])
+}
+
+model Category {
+  id            Int             @id @default(autoincrement())
+  householdId   String
+  household     Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name          String
+  subcategories Subcategory[]
+  budgets       Budget[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([name, householdId])
+}
+
+model Subcategory {
+  id          Int       @id @default(autoincrement())
+  name        String
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  defaultUnit String?
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([name, categoryId])
+}
+
+model Expense {
+  id            Int         @id @default(autoincrement())
+  householdId   String
+  household     Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  date          DateTime
+  subcategoryId Int
+  subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  quantity      Float
+  unit          String
+  amount        Float       // Amount in TZS
+  paymentMethod String
+  notes         String?
+  addedById     Int
+  addedBy       User        @relation("ExpenseAddedBy", fields: [addedById], references: [id], onDelete: Restrict)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Budget {
+  id          Int       @id @default(autoincrement())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  month       Int       // 1-12
+  year        Int
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  amount      Float     // Budget limit in TZS
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([month, year, categoryId])
+}
