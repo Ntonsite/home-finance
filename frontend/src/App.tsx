@@ -12,7 +12,7 @@ import { AcceptInvite } from './pages/AcceptInvite';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/homefinance">
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />

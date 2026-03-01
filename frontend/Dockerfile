@@ -10,16 +10,19 @@ RUN npm run build
 
 FROM nginx:alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html/homefinance
 
 # Copy custom nginx config if necessary, or use default
 # Here we add a basic config to support React Router
 RUN echo 'server { \
     listen 80; \
-    location / { \
+    location /homefinance { \
         root /usr/share/nginx/html; \
         index index.html index.htm; \
-        try_files $uri $uri/ /index.html; \
+        try_files $uri $uri/ /homefinance/index.html; \
+    } \
+    location / { \
+        return 301 /homefinance; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 

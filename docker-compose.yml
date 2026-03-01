@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  haproxy:
+    image: haproxy:2.8-alpine
+    container_name: homeportal-haproxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
   postgres:
     image: postgres:15-alpine
     container_name: homeportal-postgres
@@ -28,8 +41,6 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-homeportal_user}:${POSTGRES_PASSWORD:-homeportal_password}@postgres:5432/${POSTGRES_DB:-homeportal_db}?schema=public
       - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
       - PORT=3000
-    ports:
-      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,8 +51,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: homeportal-frontend
-    ports:
-      - "80:80"
     depends_on:
       - backend
     restart: unless-stopped
