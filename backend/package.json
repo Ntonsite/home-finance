@@ -8,11 +8,11 @@
     "dev": "ts-node src/index.ts",
     "build": "tsc",
     "db:migrate": "ts-node src/scripts/migrate.ts",
-    "seed": "ts-node prisma/seed.ts",
+    "seed": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts",
     "migrate": "prisma migrate deploy"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
