@@ -16,6 +16,24 @@ async function main() {
   });
   console.log('Admin user created');
 
+  // Create or get default Household
+  let household = await prisma.household.findFirst();
+  if (!household) {
+    household = await prisma.household.create({
+      data: {
+        name: 'Default Household',
+        members: {
+          create: {
+            userId: admin.id,
+            role: 'OWNER',
+          }
+        }
+      }
+    });
+    console.log('Default Household created');
+  }
+
+
   // Pre-seed Categories and Subcategories
   const categoriesData = [
     {
@@ -56,9 +74,12 @@ async function main() {
 
   for (const catData of categoriesData) {
     const category = await prisma.category.upsert({
-      where: { name: catData.name },
+      where: { name_householdId: { name: catData.name, householdId: household.id } },
       update: {},
-      create: { name: catData.name },
+      create: {
+        name: catData.name,
+        householdId: household.id,
+      },
     });
 
     for (const sub of catData.subcategories) {

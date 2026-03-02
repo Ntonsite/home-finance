@@ -1,35 +1,39 @@
-# Household Consumption & Cost Intelligence System
+# Home Portal - Household Consumption & Cost Intelligence System
 
-A full-stack web portal to track and analyze variable household expenses (excluding rent) with quantity-based tracking and monthly analytics.
+A full-stack web portal designed to track and analyze variable household expenses (such as groceries, utilities, and fuel) featuring quantity-based tracking, budgeting, and comprehensive monthly analytics. 
 
-## Tech Stack
+## 🌐 Live Access
+- **Public IP**: `http://51.20.193.1`
+
+## 🛠 Tech Stack
 - **Frontend**: React (Vite), TypeScript, TailwindCSS, Recharts
 - **Backend**: Node.js, Express, PostgreSQL, Prisma ORM
-- **Authentication**: JWT-based auth
-- **Infrastructure**: Fully Dockerized
+- **Authentication**: JWT-based Authentication & Role-Based Access Control
+- **Infrastructure**: Fully Dockerized with HAProxy load balancing
 
-## Prerequisites
+## 📋 Prerequisites
 - Docker
 - Docker Compose
 
-## Quick Start
+## 🚀 Quick Start
 1. Clone the repository.
-2. Initialize environment variables from `.env.example` to `.env` in the root (optional, or rely on defaults).
-3. Run `docker-compose up -d --build` to start the PostgreSQL database, Backend API, and Frontend application.
+2. Copy the `.env.example` to `.env` in the root directory (optional, but recommended to customize settings).
+3. Run `docker-compose up -d --build` to start the required services (PostgreSQL, HAProxy, Backend API, and Frontend application).
 
-### Default Credentials
-- **Username**: admin
-- **Password**: admin123
+### 🔑 Default Credentials
+- **Username**: `admin`
+- **Password**: `admin123`
 
-## Ports
-- **Frontend**: `http://localhost:80`
+## 🔌 Ports / Services
+- **HAProxy / Main Entry**: `http://localhost:80` (or `http://51.20.193.1` in production)
 - **Backend API**: `http://localhost:3000`
 - **Database**: `localhost:5432`
 
-## Project Structure
-- `/frontend`: React code with Vite config and TailwindsCSS
-- `/backend`: Node.js Express server with Prisma Schema and Seed scripts
-- `docker-compose.yml`: Services definitions
+## 📁 Project Structure
+- `/frontend`: React application using Vite and TailwindCSS for styling.
+- `/backend`: Node.js Express server with Prisma Schema migrations and Seed scripts.
+- `/haproxy`: Configuration for the HAProxy reverse proxy/load balancer.
+- `docker-compose.yml`: Defines all services, networks, and volumes for container deployment.
 
-## License
-MIT
+## 📄 License
+This project is licensed under the MIT License.
