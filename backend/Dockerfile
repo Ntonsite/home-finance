@@ -6,13 +6,17 @@ WORKDIR /app
 RUN apk add --no-cache openssl python3 make g++
 
 COPY package*.json ./
-COPY prisma ./prisma/
 
+# 1. Install dependencies FIRST to cache the heavy Prisma engine downloads
 RUN npm install
 
+# 2. Copy the Prisma schema and run generate
+COPY prisma ./prisma/
+RUN npx prisma generate
+
+# 3. Copy the rest of the application code
 COPY . .
 
-RUN npx prisma generate
 RUN npm run build
 
 FROM node:20-alpine
