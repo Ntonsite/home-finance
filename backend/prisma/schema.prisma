@@ -15,7 +15,6 @@ model Household {
   categories  Category[]
   expenses    Expense[]
   budgets     Budget[]
-  invitations Invitation[]
   createdAt   DateTime          @default(now())
 }
 
@@ -41,20 +40,6 @@ model User {
   addedExpenses Expense[]       @relation("ExpenseAddedBy")
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-}
-
-model Invitation {
-  id          Int       @id @default(autoincrement())
-  householdId String
-  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  email       String
-  role        String    // OWNER, ADMIN, MEMBER
-  token       String    @unique
-  expiresAt   DateTime
-  accepted    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-
-  @@unique([householdId, email])
 }
 
 model Category {

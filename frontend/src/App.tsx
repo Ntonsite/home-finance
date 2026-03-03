@@ -8,7 +8,6 @@ import { Expenses } from './pages/Expenses';
 import { Categories } from './pages/Categories';
 import { Budgets } from './pages/Budgets';
 import { Members } from './pages/Members';
-import { AcceptInvite } from './pages/AcceptInvite';
 
 function App() {
   return (
@@ -16,8 +15,6 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-
-          <Route path="/accept-invite" element={<AcceptInvite />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>

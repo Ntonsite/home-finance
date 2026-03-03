@@ -16,13 +16,13 @@ export const Sidebar = () => {
 
     const routes = [...baseRoutes];
     if (user && (user.role === 'OWNER' || user.role === 'ADMIN')) {
-        routes.push({ path: '/members', name: 'Members & Invites', icon: Users });
+        routes.push({ path: '/members', name: 'Members', icon: Users });
     }
 
     return (
         <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen hidden md:flex flex-col">
             <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-700">
-                <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">HomePortal</h1>
+                <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">MATO finance</h1>
             </div>
             <nav className="flex-1 py-4 px-3 space-y-1">
                 {routes.map((route) => {

@@ -21,7 +21,7 @@ async function main() {
   if (!household) {
     household = await prisma.household.create({
       data: {
-        name: 'Default Household',
+        name: 'MATO',
         members: {
           create: {
             userId: admin.id,
@@ -30,7 +30,7 @@ async function main() {
         }
       }
     });
-    console.log('Default Household created');
+    console.log('MATO Household created');
   }
 
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
-import { Save } from 'lucide-react';
+import { Save, Wallet } from 'lucide-react';
 
 interface Category {
     id: number;
@@ -72,70 +72,72 @@ export const Budgets = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h1 className="text-2xl font-bold dark:text-white">Budget Planning</h1>
-                <div className="flex space-x-4">
-                    <select
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                        className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 border focus:ring-primary-500"
-                    >
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                            <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 border focus:ring-primary-500"
-                    >
-                        {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map((y) => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
-                </div>
+        <div className="space-y-4 pb-24">
+            <h1 className="text-2xl font-bold text-gray-100 mb-6">Budgets</h1>
+
+            <div className="flex justify-between items-center gap-2 mb-6">
+                <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    className="flex-1 rounded-xl bg-gray-800 border-gray-700 text-white font-medium p-3 shadow-sm focus:ring-primary-500"
+                >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                        <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'short' })}</option>
+                    ))}
+                </select>
+                <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    className="flex-1 rounded-xl bg-gray-800 border-gray-700 text-white font-medium p-3 shadow-sm focus:ring-primary-500"
+                >
+                    {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
             </div>
 
             {loading ? (
-                <div className="text-center py-10 dark:text-gray-400">Loading budgets...</div>
+                <div className="space-y-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-gray-800 rounded-2xl h-24 animate-pulse border border-gray-800/50"></div>
+                    ))}
+                </div>
+            ) : categories.length === 0 ? (
+                <div className="text-center py-12 bg-gray-800 rounded-2xl border border-gray-700 shadow-md">
+                    <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Wallet className="w-8 h-8 text-primary-500" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-200">No Categories Found</h3>
+                    <p className="text-sm text-gray-500 mt-1">Add categories first to set budgets</p>
+                </div>
             ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Budget Amount (TZS)</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {categories.map((cat) => (
-                                <tr key={cat.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {cat.name}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                        <input
-                                            type="number"
-                                            value={editAmounts[cat.id] || ''}
-                                            onChange={(e) => setEditAmounts({ ...editAmounts, [cat.id]: e.target.value })}
-                                            placeholder="0.00"
-                                            className="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-1 border focus:ring-primary-500"
-                                        />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex space-x-2">
-                                        <button
-                                            onClick={() => handleSaveBudget(cat.id)}
-                                            className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 flex items-center"
-                                        >
-                                            <Save className="w-5 h-5 mr-1" /> Save
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="space-y-4">
+                    {categories.map((cat) => (
+                        <div key={cat.id} className="bg-gray-800 rounded-2xl p-4 border border-gray-700 shadow-sm flex flex-col gap-3">
+                            <h3 className="font-bold text-gray-200">{cat.name}</h3>
+                            <div className="flex items-center gap-2">
+                                <div className="relative flex-1">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span className="text-gray-500 text-sm">TZS</span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={editAmounts[cat.id] || ''}
+                                        onChange={(e) => setEditAmounts({ ...editAmounts, [cat.id]: e.target.value })}
+                                        placeholder="0"
+                                        className="block w-full pl-12 rounded-xl border border-gray-700 bg-gray-900 text-white shadow-sm focus:border-primary-500 p-3 font-semibold"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => handleSaveBudget(cat.id)}
+                                    className="p-3 bg-primary-600/10 text-primary-400 border border-primary-500/20 hover:bg-primary-600/20 active:bg-primary-600/30 rounded-xl transition-colors shrink-0 flex items-center justify-center"
+                                    title="Save Budget"
+                                >
+                                    <Save className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>
