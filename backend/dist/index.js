@@ -13,6 +13,7 @@ const expenses_1 = __importDefault(require("./routes/expenses"));
 const budgets_1 = __importDefault(require("./routes/budgets"));
 const analytics_1 = __importDefault(require("./routes/analytics"));
 const households_1 = __importDefault(require("./routes/households"));
+const invitations_1 = __importDefault(require("./routes/invitations"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,7 @@ app.use('/api/expenses', expenses_1.default);
 app.use('/api/budgets', budgets_1.default);
 app.use('/api/analytics', analytics_1.default);
 app.use('/api/households', households_1.default);
+app.use('/api/invitations', invitations_1.default);
 // Health check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });

@@ -5,7 +5,7 @@ export const Topbar = () => {
     const { logout } = useAuth();
 
     return (
-        <header className="h-16 w-full max-w-md mx-auto bg-gray-900/90 backdrop-blur-md border-b border-gray-800 flex items-center justify-between px-4">
+        <header className="h-16 w-full bg-gray-900/90 backdrop-blur-md border-b border-gray-800 flex items-center justify-between px-4 sm:px-6 lg:px-8">
             <div className="flex items-center">
                 <div className="text-xl font-bold text-primary-400 tracking-tight">
                     MATO<span className="text-gray-100 font-medium">finance</span>

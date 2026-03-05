@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Trash2, Folder, Tag } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Subcategory {
     id: number;
@@ -15,6 +16,9 @@ interface Category {
 }
 
 export const Categories = () => {
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'OWNER' || user?.role === 'ADMIN';
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -97,26 +101,28 @@ export const Categories = () => {
         <div className="space-y-4 pb-24 relative">
             <h1 className="text-2xl font-bold text-gray-100 mb-6">Segments</h1>
 
-            {/* Floating Action Buttons */}
-            <div className="fixed bottom-20 right-6 flex flex-col gap-3 z-40">
-                <button
-                    onClick={() => { setShowAddSub(!showAddSub); setShowAddCat(false); }}
-                    className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 shadow-lg hover:bg-gray-600 active:scale-90 transition-all ml-auto"
-                    title="Add Item"
-                >
-                    <Tag className="w-5 h-5" />
-                </button>
-                <button
-                    onClick={() => { setShowAddCat(!showAddCat); setShowAddSub(false); }}
-                    className="w-14 h-14 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_0_rgba(60,130,107,0.39)] hover:bg-primary-500 active:scale-90 transition-all"
-                    title="Add Category"
-                >
-                    <Folder className="w-6 h-6" />
-                </button>
-            </div>
+            {/* Floating Action Buttons - Only for Admins */}
+            {isAdmin && (
+                <div className="fixed bottom-20 right-6 flex flex-col gap-3 z-40">
+                    <button
+                        onClick={() => { setShowAddSub(!showAddSub); setShowAddCat(false); }}
+                        className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center text-gray-300 shadow-lg hover:bg-gray-600 active:scale-90 transition-all ml-auto"
+                        title="Add Item"
+                    >
+                        <Tag className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => { setShowAddCat(!showAddCat); setShowAddSub(false); }}
+                        className="w-14 h-14 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_0_rgba(60,130,107,0.39)] hover:bg-primary-500 active:scale-90 transition-all"
+                        title="Add Category"
+                    >
+                        <Folder className="w-6 h-6" />
+                    </button>
+                </div>
+            )}
 
             {/* Quick Add Forms */}
-            {(showAddCat || showAddSub) && (
+            {isAdmin && (showAddCat || showAddSub) && (
                 <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-bold text-gray-100">
@@ -213,7 +219,9 @@ export const Categories = () => {
                         <Folder className="w-8 h-8 text-primary-500" />
                     </div>
                     <h3 className="text-lg font-medium text-gray-200">No Categories Found</h3>
-                    <p className="text-sm text-gray-500 mt-1">Tap the + button to create a category</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {isAdmin ? 'Tap the + button to create a category' : 'No categories available for this household.'}
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -242,12 +250,14 @@ export const Categories = () => {
                                                 )}
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => handleDeleteSubcategory(sub.id)}
-                                            className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => handleDeleteSubcategory(sub.id)}
+                                                className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                                 {cat.subcategories.length === 0 && (

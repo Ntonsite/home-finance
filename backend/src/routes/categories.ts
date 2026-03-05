@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { authenticate, AuthRequest, requireRole } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -21,7 +21,7 @@ router.get('/', async (req: AuthRequest, res) => {
 });
 
 // Create category
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest, res) => {
     try {
         const { name } = req.body;
         const category = await prisma.category.create({
@@ -34,7 +34,7 @@ router.post('/', async (req: AuthRequest, res) => {
 });
 
 // Update category
-router.put('/:id', async (req: AuthRequest, res) => {
+router.put('/:id', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
         const { name } = req.body;
@@ -49,7 +49,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
 });
 
 // Delete category
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
         await prisma.category.deleteMany({

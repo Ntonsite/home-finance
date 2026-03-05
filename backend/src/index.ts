@@ -8,6 +8,7 @@ import expensesRoutes from './routes/expenses';
 import budgetsRoutes from './routes/budgets';
 import analyticsRoutes from './routes/analytics';
 import householdsRoutes from './routes/households';
+import invitationsRoutes from './routes/invitations';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api/expenses', expensesRoutes);
 app.use('/api/budgets', budgetsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/households', householdsRoutes);
+app.use('/api/invitations', invitationsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

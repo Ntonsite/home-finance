@@ -1,12 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const auth_1 = require("../middleware/auth");
-const crypto_1 = __importDefault(require("crypto"));
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 router.use(auth_1.authenticate);
@@ -19,80 +15,52 @@ router.get('/members', async (req, res) => {
                 user: { select: { id: true, name: true, username: true, email: true } }
             }
         });
-        const invites = await prisma.invitation.findMany({
-            where: { householdId: req.user?.householdId, accepted: false }
-        });
-        res.json({ members, invites });
+        res.json({ members });
     }
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch household members' });
     }
 });
-// Create invite
-router.post('/invite', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
+// Add member directly
+router.post('/members', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
-        const { email, role } = req.body;
-        if (!email || !role) {
-            return res.status(400).json({ error: 'Email and role are required' });
+        const { username, role } = req.body;
+        if (!username || !role) {
+            return res.status(400).json({ error: 'Username and role are required' });
         }
-        const token = crypto_1.default.randomBytes(32).toString('hex');
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
-        const invite = await prisma.invitation.upsert({
+        const userToAdd = await prisma.user.findUnique({
+            where: { username }
+        });
+        if (!userToAdd) {
+            return res.status(404).json({ error: 'User not found. They must register first.' });
+        }
+        // Check if already in household
+        const existingMember = await prisma.householdMember.findUnique({
             where: {
-                householdId_email: {
+                householdId_userId: {
                     householdId: req.user.householdId,
-                    email
+                    userId: userToAdd.id
                 }
-            },
-            update: { token, expiresAt, role },
-            create: {
-                householdId: req.user.householdId,
-                email,
-                role,
-                token,
-                expiresAt
             }
         });
-        // In a real app we would send an email here. For now we just return the invite link
-        const inviteUrl = `${req.protocol}://${req.get('host')}/accept-invite?token=${token}`;
-        res.status(201).json({ invite, inviteUrl });
-    }
-    catch (error) {
-        res.status(500).json({ error: 'Failed to create invite' });
-    }
-});
-// We need a public route for accepting the invite (since they might not have an account yet or they need to log in during the process)
-// But since the frontend will handle auth first, the frontend will pass the token to a protected endpoint once the user is logged in.
-router.post('/accept-invite', async (req, res) => {
-    try {
-        const { token } = req.body;
-        if (!token)
-            return res.status(400).json({ error: 'Token is required' });
-        const invite = await prisma.invitation.findUnique({ where: { token } });
-        if (!invite)
-            return res.status(404).json({ error: 'Invite not found' });
-        if (invite.accepted)
-            return res.status(400).json({ error: 'Invite already accepted' });
-        if (new Date() > invite.expiresAt)
-            return res.status(400).json({ error: 'Invite expired' });
-        // Add user to household
-        await prisma.householdMember.create({
+        if (existingMember) {
+            return res.status(400).json({ error: 'User is already a member of this household' });
+        }
+        const newMember = await prisma.householdMember.create({
             data: {
-                householdId: invite.householdId,
-                userId: req.user.id,
-                role: invite.role
+                householdId: req.user.householdId,
+                userId: userToAdd.id,
+                role
+            },
+            include: {
+                user: { select: { id: true, name: true, username: true, email: true } }
             }
         });
-        // Mark invite as accepted
-        await prisma.invitation.update({
-            where: { id: invite.id },
-            data: { accepted: true }
-        });
-        res.json({ message: 'Successfully joined household' });
+        res.status(201).json({ message: 'Member added successfully', member: newMember });
     }
     catch (error) {
-        res.status(500).json({ error: 'Failed to accept invite' });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to add member' });
     }
 });
 // Delete member
@@ -113,20 +81,55 @@ router.delete('/members/:id', (0, auth_1.requireRole)(['OWNER']), async (req, re
         res.status(500).json({ error: 'Failed to remove member' });
     }
 });
-// Delete invite
-router.delete('/invite/:id', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
+// Accept invitation
+router.post('/accept-invite', async (req, res) => {
     try {
-        const { id } = req.params;
-        const invite = await prisma.invitation.findUnique({ where: { id: Number(id) } });
-        if (!invite)
-            return res.status(404).json({ error: 'Invite not found' });
-        if (invite.householdId !== req.user?.householdId)
-            return res.status(403).json({ error: 'Forbidden' });
-        await prisma.invitation.delete({ where: { id: Number(id) } });
-        res.status(204).send();
+        const { token } = req.body;
+        if (!token)
+            return res.status(400).json({ error: 'Token is required' });
+        const invitation = await prisma.invitation.findUnique({
+            where: { id: token },
+            include: { household: true }
+        });
+        if (!invitation)
+            return res.status(404).json({ error: 'Invalid invitation link' });
+        if (invitation.usedAt)
+            return res.status(400).json({ error: 'Invitation has already been used' });
+        if (invitation.expiresAt < new Date())
+            return res.status(400).json({ error: 'Invitation has expired' });
+        // Check if user is already a member of this household
+        const existingMember = await prisma.householdMember.findUnique({
+            where: {
+                householdId_userId: {
+                    householdId: invitation.householdId,
+                    userId: req.user.id
+                }
+            }
+        });
+        if (existingMember) {
+            return res.status(400).json({ error: 'You are already a member of this household' });
+        }
+        // Add user to household
+        const newMember = await prisma.householdMember.create({
+            data: {
+                householdId: invitation.householdId,
+                userId: req.user.id,
+                role: invitation.role
+            }
+        });
+        // Mark invitation as used
+        await prisma.invitation.update({
+            where: { id: token },
+            data: {
+                usedAt: new Date(),
+                usedById: req.user.id
+            }
+        });
+        res.json({ message: 'Successfully joined household', household: invitation.household, member: newMember });
     }
     catch (error) {
-        res.status(500).json({ error: 'Failed to remove invite' });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to accept invitation' });
     }
 });
 exports.default = router;

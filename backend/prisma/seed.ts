@@ -33,6 +33,35 @@ async function main() {
     console.log('MATO Household created');
   }
 
+  // Create test member user 'maisho'
+  const maishoPassword = await bcrypt.hash('elvin2024', 10);
+  const maisho = await prisma.user.upsert({
+    where: { username: 'maisho' },
+    update: {},
+    create: {
+      username: 'maisho',
+      password: maishoPassword,
+      name: 'Maisho',
+    },
+  });
+
+  // Ensure maisho is in the household
+  await prisma.householdMember.upsert({
+    where: {
+      householdId_userId: {
+        householdId: household.id,
+        userId: maisho.id,
+      },
+    },
+    update: {},
+    create: {
+      householdId: household.id,
+      userId: maisho.id,
+      role: 'MEMBER',
+    },
+  });
+  console.log('Test user maisho created and added to household');
+
 
   // Pre-seed Categories and Subcategories
   const categoriesData = [

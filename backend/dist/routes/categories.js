@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
     }
 });
 // Create category
-router.post('/', async (req, res) => {
+router.post('/', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
         const { name } = req.body;
         const category = await prisma.category.create({
@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
     }
 });
 // Update category
-router.put('/:id', async (req, res) => {
+router.put('/:id', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
         const { id } = req.params;
         const { name } = req.body;
@@ -48,7 +48,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 // Delete category
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
         const { id } = req.params;
         await prisma.category.deleteMany({

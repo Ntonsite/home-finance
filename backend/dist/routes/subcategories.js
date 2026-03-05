@@ -7,7 +7,7 @@ const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 router.use(auth_1.authenticate);
 // Create subcategory
-router.post('/', async (req, res) => {
+router.post('/', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
         const { name, categoryId, defaultUnit } = req.body;
         // Verify that the category belongs to the user's household
@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
     }
 });
 // Update subcategory
-router.put('/:id', async (req, res) => {
+router.put('/:id', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
         const { id } = req.params;
         const { name, categoryId, defaultUnit } = req.body;
@@ -47,7 +47,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 // Delete subcategory
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', (0, auth_1.requireRole)(['OWNER', 'ADMIN']), async (req, res) => {
     try {
         const { id } = req.params;
         await prisma.subcategory.deleteMany({

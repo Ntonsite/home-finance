@@ -15,6 +15,7 @@ model Household {
   categories  Category[]
   expenses    Expense[]
   budgets     Budget[]
+  invitations Invitation[]
   createdAt   DateTime          @default(now())
 }
 
@@ -38,6 +39,7 @@ model User {
   password    String
   memberships HouseholdMember[]
   addedExpenses Expense[]       @relation("ExpenseAddedBy")
+  usedInvitations Invitation[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
@@ -99,4 +101,19 @@ model Budget {
   updatedAt   DateTime  @updatedAt
 
   @@unique([month, year, categoryId])
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  role        String    @default("MEMBER") // ADMIN or MEMBER
+  email       String?   // Optional: targeted invitation
+  expiresAt   DateTime
+  usedAt      DateTime?
+  usedById    Int?
+  usedBy      User?     @relation(fields: [usedById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([householdId])
 }

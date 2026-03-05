@@ -88,4 +88,59 @@ router.delete('/members/:id', requireRole(['OWNER']), async (req: AuthRequest, r
     }
 });
 
+// Accept invitation
+router.post('/accept-invite', async (req: AuthRequest, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ error: 'Token is required' });
+
+        const invitation = await prisma.invitation.findUnique({
+            where: { id: token },
+            include: { household: true }
+        });
+
+        if (!invitation) return res.status(404).json({ error: 'Invalid invitation link' });
+        if (invitation.usedAt) return res.status(400).json({ error: 'Invitation has already been used' });
+        if (invitation.expiresAt < new Date()) return res.status(400).json({ error: 'Invitation has expired' });
+
+        // Check if user is already a member of this household
+        const existingMember = await prisma.householdMember.findUnique({
+            where: {
+                householdId_userId: {
+                    householdId: invitation.householdId,
+                    userId: req.user!.id
+                }
+            }
+        });
+
+        if (existingMember) {
+            return res.status(400).json({ error: 'You are already a member of this household' });
+        }
+
+        // Add user to household
+        const newMember = await prisma.householdMember.create({
+            data: {
+                householdId: invitation.householdId,
+                userId: req.user!.id,
+                role: invitation.role
+            }
+        });
+
+        // Mark invitation as used
+        await prisma.invitation.update({
+            where: { id: token },
+            data: {
+                usedAt: new Date(),
+                usedById: req.user!.id
+            }
+        });
+
+        res.json({ message: 'Successfully joined household', household: invitation.household, member: newMember });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to accept invitation' });
+    }
+});
+
 export default router;
