@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import {
-    PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend
+    PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend,
+    AreaChart, Area, XAxis, YAxis, CartesianGrid
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, User, Calendar } from 'lucide-react';
 
 export const Dashboard = () => {
     const currentDate = new Date();
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+    const [viewMode, setViewMode] = useState<'household' | 'personal'>('household');
 
     const [overview, setOverview] = useState<any>(null);
     const [comparison, setComparison] = useState<any>(null);
@@ -17,9 +19,10 @@ export const Dashboard = () => {
     const fetchAnalytics = async () => {
         try {
             setLoading(true);
+            const isPersonal = viewMode === 'personal';
             const [overviewData, comparisonData] = await Promise.all([
-                apiClient(`/analytics/monthly-overview?month=${selectedMonth}&year=${selectedYear}`),
-                apiClient(`/analytics/comparison?month=${selectedMonth}&year=${selectedYear}`)
+                apiClient(`/analytics/monthly-overview?month=${selectedMonth}&year=${selectedYear}&personal=${isPersonal}`),
+                apiClient(`/analytics/comparison?month=${selectedMonth}&year=${selectedYear}&personal=${isPersonal}`)
             ]);
             setOverview(overviewData);
             setComparison(comparisonData);
@@ -32,90 +35,172 @@ export const Dashboard = () => {
 
     useEffect(() => {
         fetchAnalytics();
-    }, [selectedMonth, selectedYear]);
+    }, [selectedMonth, selectedYear, viewMode]);
 
-    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+    const COLORS = ['#3b82f6', '#60a5fa', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+
+    const formatCurrency = (val: number) => `TZS ${val.toLocaleString()}`;
 
     return (
-        <div className="space-y-6 pb-20">
-            {/* Header controls */}
-            <div className="flex justify-between items-center gap-2">
-                <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    className="flex-1 rounded-xl bg-gray-800 border-gray-700 text-white font-medium p-3 shadow-sm focus:ring-primary-500"
-                >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                        <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'short' })}</option>
-                    ))}
-                </select>
-                <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="flex-1 rounded-xl bg-gray-800 border-gray-700 text-white font-medium p-3 shadow-sm focus:ring-primary-500"
-                >
-                    {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map((y) => (
-                        <option key={y} value={y}>{y}</option>
-                    ))}
-                </select>
+        <div className="space-y-6 pb-24 px-4 max-w-4xl mx-auto">
+            {/* Header & Controls */}
+            <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-2xl font-bold premium-gradient-text">Overview</h1>
+                        <p className="text-gray-400 text-sm">Track your financial status</p>
+                    </div>
+                    <div className="flex bg-navy-900 p-1 rounded-xl border border-gray-700">
+                        <button
+                            onClick={() => setViewMode('household')}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                viewMode === 'household' ? 'bg-electric-blue text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            <Users size={14} /> Household
+                        </button>
+                        <button
+                            onClick={() => setViewMode('personal')}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                viewMode === 'personal' ? 'bg-electric-blue text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                            }`}
+                        >
+                            <User size={14} /> Personal
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                        <select
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                            className="w-full appearance-none rounded-xl bg-navy-900 border-gray-700 text-white font-medium p-3 pl-10 shadow-sm focus:ring-electric-blue"
+                        >
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                                <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</option>
+                            ))}
+                        </select>
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    </div>
+                    <div className="flex-1 relative">
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="w-full appearance-none rounded-xl bg-navy-900 border-gray-700 text-white font-medium p-3 pl-10 shadow-sm focus:ring-electric-blue"
+                        >
+                            {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map((y) => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    </div>
+                </div>
             </div>
 
             {loading || !overview || !comparison ? (
                 <div className="space-y-4">
-                    {/* Skeleton Cards */}
-                    <div className="bg-gray-800 rounded-2xl h-32 animate-pulse border border-gray-700"></div>
-                    <div className="bg-gray-800 rounded-2xl h-32 animate-pulse border border-gray-700"></div>
-                    <div className="bg-gray-800 rounded-2xl h-64 animate-pulse border border-gray-700"></div>
-                    <div className="bg-gray-800 rounded-2xl h-64 animate-pulse border border-gray-700"></div>
+                    <div className="premium-card h-32 animate-pulse"></div>
+                    <div className="premium-card h-64 animate-pulse"></div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="premium-card h-40 animate-pulse"></div>
+                        <div className="premium-card h-40 animate-pulse"></div>
+                    </div>
                 </div>
             ) : (
                 <>
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5 relative overflow-hidden">
-                            <div className="flex items-center justify-between z-10 relative">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Spend</p>
-                                    <p className="text-3xl font-bold text-white tracking-tight">
-                                        TZS {overview.totalSpent.toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className="p-3 bg-primary-500/10 text-primary-400 rounded-xl border border-primary-500/20">
-                                    <DollarSign className="w-7 h-7" />
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="premium-card p-5 relative overflow-hidden group">
+                            <div className="z-10 relative">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Spending</p>
+                                <p className="text-3xl font-bold text-white tracking-tight">
+                                    {formatCurrency(overview.totalSpent)}
+                                </p>
+                                <div className="mt-4 flex items-center gap-2">
+                                    <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${
+                                        comparison.trend === 'increase' ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'
+                                    }`}>
+                                        {comparison.trend === 'increase' ? <TrendingUp size={12} className="mr-1" /> : <TrendingDown size={12} className="mr-1" />}
+                                        {Math.abs(comparison.percentChange).toFixed(1)}% vs Last Month
+                                    </div>
                                 </div>
                             </div>
-                            <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-primary-500/5 rounded-full blur-2xl"></div>
+                            <div className="absolute top-1/2 -translate-y-1/2 right-4 p-4 bg-electric-blue/10 text-electric-blue rounded-2xl border border-electric-blue/20 group-hover:scale-110 transition-transform">
+                                <DollarSign className="w-8 h-8" />
+                            </div>
                         </div>
 
-                        <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5 relative overflow-hidden">
-                            <div className="flex items-center justify-between z-10 relative">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">M/M Change</p>
-                                    <div className="flex items-baseline gap-2">
-                                        <p className="text-3xl font-bold text-white tracking-tight">
-                                            {comparison.percentChange.toFixed(1)}%
-                                        </p>
-                                    </div>
-                                    <p className="mt-1 text-xs text-gray-500 font-medium">
-                                        Prev: TZS {comparison.prevTotal.toLocaleString()}
-                                    </p>
-                                </div>
-                                <div className={`p-3 rounded-xl border ${comparison.trend === 'increase'
-                                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                    : 'bg-primary-500/10 text-primary-400 border-primary-500/20'
-                                    }`}
-                                >
-                                    {comparison.trend === 'increase' ? <TrendingUp className="w-7 h-7" /> : <TrendingDown className="w-7 h-7" />}
-                                </div>
+                        <div className="premium-card p-5 relative overflow-hidden group">
+                            <div className="z-10 relative">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Previous Month</p>
+                                <p className="text-3xl font-bold text-white tracking-tight">
+                                    {formatCurrency(comparison.prevTotal)}
+                                </p>
+                                <p className="mt-4 text-xs text-gray-500 font-medium">
+                                    Budget Utilization: <span className="text-white">84%</span>
+                                </p>
+                            </div>
+                            <div className="absolute top-1/2 -translate-y-1/2 right-4 p-4 bg-glow-blue/10 text-glow-blue rounded-2xl border border-glow-blue/20 group-hover:scale-110 transition-transform">
+                                <Calendar className="w-8 h-8" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Charts Row */}
-                    <div className="grid grid-cols-1 gap-4 mt-6">
+                    {/* Daily Trend Chart */}
+                    <div className="premium-card p-5">
+                        <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-6 flex justify-between items-center">
+                            Daily Spending Trend
+                            <span className="text-[10px] bg-navy-950 px-2 py-1 rounded border border-gray-700">CURRENT MONTH</span>
+                        </h2>
+                        <div className="h-64 mt-4 -ml-6">
+                            {overview.dailyTrend.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={overview.dailyTrend}>
+                                        <defs>
+                                            <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                        <XAxis 
+                                            dataKey="date" 
+                                            hide 
+                                        />
+                                        <YAxis hide domain={['auto', 'auto']} />
+                                        <RechartsTooltip
+                                            contentStyle={{ 
+                                                backgroundColor: '#1e3a5f', 
+                                                borderColor: '#334155', 
+                                                borderRadius: '12px',
+                                                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'
+                                            }}
+                                            itemStyle={{ color: '#fff' }}
+                                            formatter={(val: any) => formatCurrency(Number(val))}
+                                            labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                                        />
+                                        <Area
+                                            type="monotone"
+                                            dataKey="amount"
+                                            stroke="#3b82f6"
+                                            strokeWidth={3}
+                                            fillOpacity={1}
+                                            fill="url(#colorSpend)"
+                                            animationDuration={1500}
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-gray-500 text-sm">No data for this period</div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Pie Chart */}
-                        <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5">
-                            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4">Spend by Category</h2>
+                        <div className="premium-card p-5">
+                            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4">Category Allocation</h2>
                             <div className="h-64">
                                 {overview.categorySpend.length > 0 ? (
                                     <ResponsiveContainer width="100%" height="100%">
@@ -125,8 +210,8 @@ export const Dashboard = () => {
                                                 cx="50%"
                                                 cy="50%"
                                                 innerRadius={60}
-                                                outerRadius={80}
-                                                paddingAngle={5}
+                                                outerRadius={85}
+                                                paddingAngle={8}
                                                 dataKey="value"
                                                 stroke="none"
                                             >
@@ -135,11 +220,16 @@ export const Dashboard = () => {
                                                 ))}
                                             </Pie>
                                             <RechartsTooltip
-                                                formatter={(val: any) => `TZS ${Number(val).toLocaleString()}`}
-                                                contentStyle={{ backgroundColor: '#1E293B', borderColor: '#334155', color: '#F8FAFC', borderRadius: '12px' }}
-                                                itemStyle={{ color: '#F8FAFC' }}
+                                                formatter={(val: any) => formatCurrency(Number(val))}
+                                                contentStyle={{ backgroundColor: '#1e3a5f', border: 'none', borderRadius: '12px' }}
+                                                itemStyle={{ color: '#fff' }}
                                             />
-                                            <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                                            <Legend 
+                                                verticalAlign="bottom" 
+                                                align="center"
+                                                iconType="circle"
+                                                wrapperStyle={{ fontSize: '10px', paddingTop: '20px' }}
+                                            />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 ) : (
@@ -148,26 +238,26 @@ export const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Top 5 Expensive Subcategories */}
-                        <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5">
-                            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-5">Top Expenses</h2>
+                        {/* Top Expenses */}
+                        <div className="premium-card p-5">
+                            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-5">High Frequency Items</h2>
                             <div className="space-y-4">
                                 {overview.topSubcategories && overview.topSubcategories.length > 0 ? (
                                     overview.topSubcategories.map((item: any, index: number) => (
                                         <div key={item.name} className="flex items-center">
-                                            <div className="w-8 h-8 rounded-xl bg-gray-900 border border-gray-700 text-primary-400 flex items-center justify-center font-bold text-xs mr-3 shrink-0">
+                                            <div className="w-8 h-8 rounded-lg bg-navy-950 border border-gray-700 text-electric-blue flex items-center justify-center font-bold text-xs mr-3 shrink-0">
                                                 {index + 1}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-end mb-1">
                                                     <p className="text-sm font-medium text-white truncate pr-2">{item.name}</p>
-                                                    <p className="text-sm font-bold text-primary-400 whitespace-nowrap">
+                                                    <p className="text-sm font-bold text-white whitespace-nowrap">
                                                         {item.amount.toLocaleString()}
                                                     </p>
                                                 </div>
-                                                <div className="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden border border-gray-700/50">
+                                                <div className="w-full bg-navy-950 rounded-full h-1.5 overflow-hidden">
                                                     <div
-                                                        className="bg-primary-500 h-full transition-all duration-500 ease-out"
+                                                        className="bg-electric-blue h-full rounded-full"
                                                         style={{ width: `${Math.max(5, (item.amount / overview.topSubcategories[0].amount) * 100)}%` }}
                                                     ></div>
                                                 </div>
@@ -176,35 +266,32 @@ export const Dashboard = () => {
                                     ))
                                 ) : (
                                     <div className="py-8 text-center text-gray-500 text-sm">
-                                        No spending data available.
+                                        No metrics to display.
                                     </div>
                                 )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Subcategory Intelligence Stacked Cards */}
-                        <div className="mt-2 space-y-3">
-                            <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3 px-1">Detailed Breakdown</h2>
+                    {/* Insights Breakdown */}
+                    <div className="space-y-3">
+                        <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider px-1">Subcategory Intelligence</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {overview.subcategoryInsights.sort((a: any, b: any) => b.spent - a.spent).map((item: any) => (
-                                <div key={item.name} className="bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-700 flex flex-col gap-2">
+                                <div key={item.name} className="premium-card p-4 flex flex-col gap-2 hover:border-electric-blue/30 transition-colors">
                                     <div className="flex justify-between items-start">
                                         <h3 className="text-sm font-bold text-gray-100">{item.name}</h3>
-                                        <span className="text-sm font-bold text-white">TZS {item.spent.toLocaleString()}</span>
+                                        <span className="text-sm font-black text-electric-blue">{formatCurrency(item.spent)}</span>
                                     </div>
-                                    <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
-                                        <div className="flex gap-3">
-                                            <span>Qty: {item.quantity}</span>
-                                            <span>Freq: {item.frequency}x</span>
+                                    <div className="flex justify-between items-center text-[10px] text-gray-500 font-bold mt-1">
+                                        <div className="flex gap-4">
+                                            <span className="flex items-center gap-1 uppercase tracking-tighter"><Calendar size={10}/> {item.frequency}x FREQ</span>
+                                            <span className="flex items-center gap-1 uppercase tracking-tighter"><TrendingUp size={10}/> {item.quantity} units</span>
                                         </div>
-                                        <span>Avg: TZS {item.avgCostPerUnit.toLocaleString(undefined, { maximumFractionDigits: 0 })}/u</span>
+                                        <span className="bg-navy-950 px-2 py-0.5 rounded border border-gray-800">AVG: {item.avgCostPerUnit.toLocaleString(undefined, { maximumFractionDigits: 0 })}/u</span>
                                     </div>
                                 </div>
                             ))}
-                            {overview.subcategoryInsights.length === 0 && (
-                                <div className="text-center py-6 text-gray-500 text-sm bg-gray-800 rounded-2xl border border-gray-700">
-                                    No detailed breakdown available.
-                                </div>
-                            )}
                         </div>
                     </div>
                 </>

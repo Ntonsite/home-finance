@@ -37,6 +37,7 @@ model User {
   username    String            @unique
   email       String?           @unique
   password    String
+  isSuperAdmin Boolean          @default(false)
   memberships HouseholdMember[]
   addedExpenses Expense[]       @relation("ExpenseAddedBy")
   usedInvitations Invitation[]
@@ -46,8 +47,8 @@ model User {
 
 model Category {
   id            Int             @id @default(autoincrement())
-  householdId   String
-  household     Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  householdId   String?         // Optional for personal categories
+  household     Household?      @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name          String
   subcategories Subcategory[]
   budgets       Budget[]
@@ -72,8 +73,8 @@ model Subcategory {
 
 model Expense {
   id            Int         @id @default(autoincrement())
-  householdId   String
-  household     Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  householdId   String?     // Optional for personal expenses
+  household     Household?  @relation(fields: [householdId], references: [id], onDelete: Cascade)
   date          DateTime
   subcategoryId Int
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
@@ -84,6 +85,7 @@ model Expense {
   notes         String?
   addedById     Int
   addedBy       User        @relation("ExpenseAddedBy", fields: [addedById], references: [id], onDelete: Restrict)
+  isPersonal    Boolean     @default(false)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }

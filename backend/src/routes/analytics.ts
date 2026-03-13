@@ -10,7 +10,7 @@ router.use(authenticate);
 // Monthly Overview
 router.get('/monthly-overview', async (req: AuthRequest, res) => {
     try {
-        const { month, year } = req.query;
+        const { month, year, personal } = req.query;
         if (!month || !year) return res.status(400).json({ error: 'Month and year are required' });
 
         const m = Number(month);
@@ -18,11 +18,23 @@ router.get('/monthly-overview', async (req: AuthRequest, res) => {
         const startDate = new Date(y, m - 1, 1);
         const endDate = new Date(y, m, 0);
 
+        const where: any = {
+            date: { gte: startDate, lte: endDate }
+        };
+
+        if (personal === 'true') {
+            where.isPersonal = true;
+            where.addedById = req.user!.id;
+        } else if (req.user?.householdId) {
+            where.householdId = req.user.householdId;
+            where.isPersonal = false;
+        } else {
+            where.isPersonal = true;
+            where.addedById = req.user!.id;
+        }
+
         const expenses = await prisma.expense.findMany({
-            where: {
-                householdId: req.user?.householdId,
-                date: { gte: startDate, lte: endDate }
-            },
+            where,
             include: {
                 subcategory: {
                     include: { category: true }
@@ -33,24 +45,20 @@ router.get('/monthly-overview', async (req: AuthRequest, res) => {
             }
         });
 
-        // Total variable spending
         const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-        // Spending per category (for pie chart)
         const categorySpend: Record<string, number> = {};
         expenses.forEach(exp => {
             const catName = exp.subcategory.category.name;
             categorySpend[catName] = (categorySpend[catName] || 0) + exp.amount;
         });
 
-        // Monthly trend by day
         const dailyTrend: Record<string, number> = {};
         expenses.forEach(exp => {
             const day = exp.date.toISOString().split('T')[0];
             dailyTrend[day] = (dailyTrend[day] || 0) + exp.amount;
         });
 
-        // Subcategory breakdown logic (similar to above for detailed insights)
         const subcategorySpend: Record<string, number> = {};
         const subcategoryQuantity: Record<string, number> = {};
         const subcategoryFrequency: Record<string, number> = {};
@@ -62,14 +70,12 @@ router.get('/monthly-overview', async (req: AuthRequest, res) => {
             subcategoryFrequency[subName] = (subcategoryFrequency[subName] || 0) + 1;
         });
 
-        // Spending per user
         const userSpend: Record<string, number> = {};
         expenses.forEach(exp => {
             const userName = exp.addedBy?.username || 'Unknown';
             userSpend[userName] = (userSpend[userName] || 0) + exp.amount;
         });
 
-        // Top 5 expensive subcategories
         const topSubcategories = Object.entries(subcategorySpend)
             .map(([name, amount]) => ({ name, amount }))
             .sort((a, b) => b.amount - a.amount)
@@ -84,7 +90,7 @@ router.get('/monthly-overview', async (req: AuthRequest, res) => {
                 spent: subcategorySpend[name],
                 quantity: subcategoryQuantity[name],
                 frequency: subcategoryFrequency[name],
-                avgCostPerUnit: subcategorySpend[name] / subcategoryQuantity[name]
+                avgCostPerUnit: subcategorySpend[name] / (subcategoryQuantity[name] || 1)
             })),
             userSpend: Object.entries(userSpend).map(([name, amount]) => ({ name, amount })),
             topSubcategories
@@ -98,7 +104,7 @@ router.get('/monthly-overview', async (req: AuthRequest, res) => {
 // Comparison with previous month
 router.get('/comparison', async (req: AuthRequest, res) => {
     try {
-        const { month, year } = req.query;
+        const { month, year, personal } = req.query;
         if (!month || !year) return res.status(400).json({ error: 'Month and year are required' });
 
         const m = Number(month);
@@ -112,13 +118,28 @@ router.get('/comparison', async (req: AuthRequest, res) => {
         const prevStart = new Date(prevY, prevM - 1, 1);
         const prevEnd = new Date(prevY, prevM, 0);
 
-        const currentExpenses = await prisma.expense.findMany({
-            where: { householdId: req.user?.householdId, date: { gte: currentStart, lte: currentEnd } }
-        });
+        const currentWhere: any = { date: { gte: currentStart, lte: currentEnd } };
+        const prevWhere: any = { date: { gte: prevStart, lte: prevEnd } };
 
-        const prevExpenses = await prisma.expense.findMany({
-            where: { householdId: req.user?.householdId, date: { gte: prevStart, lte: prevEnd } }
-        });
+        if (personal === 'true') {
+            currentWhere.isPersonal = true;
+            currentWhere.addedById = req.user!.id;
+            prevWhere.isPersonal = true;
+            prevWhere.addedById = req.user!.id;
+        } else if (req.user?.householdId) {
+            currentWhere.householdId = req.user.householdId;
+            currentWhere.isPersonal = false;
+            prevWhere.householdId = req.user.householdId;
+            prevWhere.isPersonal = false;
+        } else {
+            currentWhere.isPersonal = true;
+            currentWhere.addedById = req.user!.id;
+            prevWhere.isPersonal = true;
+            prevWhere.addedById = req.user!.id;
+        }
+
+        const currentExpenses = await prisma.expense.findMany({ where: currentWhere });
+        const prevExpenses = await prisma.expense.findMany({ where: prevWhere });
 
         const currentTotal = currentExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         const prevTotal = prevExpenses.reduce((sum, exp) => sum + exp.amount, 0);

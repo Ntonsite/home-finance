@@ -7,11 +7,27 @@ const prisma = new PrismaClient();
 
 router.use(authenticate);
 
-// Get all expenses
+// Get all expenses (household + personal)
 router.get('/', async (req: AuthRequest, res) => {
     try {
+        const { personal } = req.query;
+        
+        const where: any = {};
+        
+        if (personal === 'true') {
+            where.isPersonal = true;
+            where.addedById = req.user!.id;
+        } else if (req.user?.householdId) {
+            where.householdId = req.user.householdId;
+            where.isPersonal = false;
+        } else {
+            // User has no household, only personal expenses
+            where.isPersonal = true;
+            where.addedById = req.user!.id;
+        }
+
         const expenses = await prisma.expense.findMany({
-            where: { householdId: req.user?.householdId },
+            where,
             include: {
                 subcategory: {
                     include: { category: true }
@@ -29,12 +45,11 @@ router.get('/', async (req: AuthRequest, res) => {
 // Create an expense
 router.post('/', async (req: AuthRequest, res) => {
     try {
-        const { date, subcategoryId, quantity, unit, amount, paymentMethod, notes } = req.body;
+        const { date, subcategoryId, quantity, unit, amount, paymentMethod, notes, isPersonal } = req.body;
 
-        // Convert to numbers and exact Date
         const expense = await prisma.expense.create({
             data: {
-                householdId: req.user!.householdId,
+                householdId: isPersonal ? null : req.user!.householdId,
                 addedById: req.user!.id,
                 date: new Date(date),
                 subcategoryId: Number(subcategoryId),
@@ -42,7 +57,8 @@ router.post('/', async (req: AuthRequest, res) => {
                 unit,
                 amount: Number(amount),
                 paymentMethod,
-                notes
+                notes,
+                isPersonal: !!isPersonal
             }
         });
 
@@ -57,10 +73,10 @@ router.post('/', async (req: AuthRequest, res) => {
 router.put('/:id', async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        const { date, subcategoryId, quantity, unit, amount, paymentMethod, notes } = req.body;
+        const { date, subcategoryId, quantity, unit, amount, paymentMethod, notes, isPersonal } = req.body;
 
-        const expense = await prisma.expense.updateMany({
-            where: { id: Number(id), householdId: req.user?.householdId },
+        const expense = await prisma.expense.update({
+            where: { id: Number(id) },
             data: {
                 date: new Date(date),
                 subcategoryId: Number(subcategoryId),
@@ -68,7 +84,9 @@ router.put('/:id', async (req: AuthRequest, res) => {
                 unit,
                 amount: Number(amount),
                 paymentMethod,
-                notes
+                notes,
+                isPersonal: !!isPersonal,
+                householdId: isPersonal ? null : req.user!.householdId,
             }
         });
 
@@ -82,8 +100,8 @@ router.put('/:id', async (req: AuthRequest, res) => {
 router.delete('/:id', async (req: AuthRequest, res) => {
     try {
         const { id } = req.params;
-        await prisma.expense.deleteMany({
-            where: { id: Number(id), householdId: req.user?.householdId }
+        await prisma.expense.delete({
+            where: { id: Number(id) }
         });
         res.status(204).send();
     } catch (error) {

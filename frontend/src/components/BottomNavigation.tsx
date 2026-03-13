@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Receipt, PieChart, User } from 'lucide-react';
+import { Home, Receipt, PieChart, Users, Settings } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 
 const navigation = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Transactions', path: '/expenses', icon: Receipt },
-    { name: 'Reports', path: '/budgets', icon: PieChart },
+    { name: 'Index', path: '/', icon: Home },
+    { name: 'Trans', path: '/expenses', icon: Receipt },
+    { name: 'Visual', path: '/categories', icon: PieChart },
 ];
 
 export const BottomNavigation = () => {
@@ -15,16 +15,15 @@ export const BottomNavigation = () => {
 
     const tabs = [...navigation];
     if (user && (user.role === 'OWNER' || user.role === 'ADMIN')) {
-        tabs.push({ name: 'Profile', path: '/members', icon: User });
-    } else {
-        // As a fallback for regular members, maybe we route to a read-only profile view,
-        // but for now, we just skip it or add a dummy link for layout balance.
-        tabs.push({ name: 'Profile', path: '/', icon: User });
+        tabs.push({ name: 'Groups', path: '/members', icon: Users });
     }
+    
+    // Always add settings for mobile
+    tabs.push({ name: 'Config', path: '/settings', icon: Settings });
 
     return (
-        <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-gray-800 border-t border-gray-700 shadow-lg">
-            <div className="grid h-full w-full mx-auto" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+        <div className="fixed bottom-0 left-0 z-50 w-full h-20 bg-navy-950/90 backdrop-blur-xl border-t border-gray-800/50 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] safe-area-pb">
+            <div className="flex h-full w-full max-w-md mx-auto justify-around items-center px-4">
                 {tabs.map((tab) => {
                     const isActive = location.pathname === tab.path || (tab.path !== '/' && location.pathname.startsWith(tab.path));
                     const Icon = tab.icon;
@@ -32,17 +31,20 @@ export const BottomNavigation = () => {
                         <Link
                             key={tab.name + tab.path}
                             to={tab.path}
-                            className="inline-flex flex-col items-center justify-center px-2 group active:scale-95 transition-transform"
+                            className="flex flex-col items-center justify-center group relative py-2 min-w-[64px]"
                         >
+                            {isActive && (
+                                <div className="absolute -top-1 w-8 h-1 bg-electric-blue rounded-full shadow-[0_0_10px_#3b82f6] animate-in fade-in duration-500"></div>
+                            )}
                             <div className={clsx(
-                                "p-1.5 rounded-full mb-1 transition-colors",
-                                isActive ? "bg-primary-500/20 text-primary-400" : "text-gray-400 group-hover:text-gray-300"
+                                "p-2 rounded-xl transition-all duration-300",
+                                isActive ? "bg-electric-blue/10 text-electric-blue scale-110 shadow-inner" : "text-gray-500 group-hover:text-gray-300"
                             )}>
-                                <Icon className="w-6 h-6" />
+                                <Icon className="w-5 h-5" />
                             </div>
                             <span className={clsx(
-                                "text-[10px] font-medium transition-colors",
-                                isActive ? "text-primary-400" : "text-gray-400 group-hover:text-gray-300"
+                                "text-[9px] font-black uppercase tracking-widest mt-1 transition-colors",
+                                isActive ? "text-white" : "text-gray-600 group-hover:text-gray-400"
                             )}>
                                 {tab.name}
                             </span>

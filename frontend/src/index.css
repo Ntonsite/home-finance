@@ -1,47 +1,86 @@
 @import "tailwindcss";
 
 @theme {
-  /* Navy Green Palette */
-  --color-primary-50: #eef7f4;
-  --color-primary-100: #d6ece3;
-  --color-primary-200: #b1d9c9;
-  --color-primary-300: #83bfab;
-  --color-primary-400: #579e86;
-  --color-primary-500: #3c826b;
-  /* Navy Green Main */
-  --color-primary-600: #2d6854;
-  --color-primary-700: #265345;
-  --color-primary-800: #214338;
-  --color-primary-900: #1d382f;
+  /* Deep Navy & Electric Blue Palette */
+  --color-primary-50: #eef7ff;
+  --color-primary-100: #d9ecff;
+  --color-primary-200: #b9ddff;
+  --color-primary-300: #8bc8ff;
+  --color-primary-400: #54a9ff;
+  --color-primary-500: #3b82f6; /* Electric Blue Accent */
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
 
-  /* Deep Charcoal Defaults mapped roughly to standard grays for easy transition */
-  --color-gray-900: #0F172A;
-  --color-gray-800: #1E293B;
+  /* Backgrounds & Secondary Blues */
+  --color-navy-950: #0a1628; /* Base Dark Background */
+  --color-navy-900: #1e3a5f; /* Card/Section Background */
+  
+  --color-electric-blue: #3b82f6;
+  --color-glow-blue: #60a5fa;
+
+  /* Grays & Neutrals */
+  --color-gray-950: #030712;
+  --color-gray-900: #0f172a;
+  --color-gray-800: #1e293b;
   --color-gray-700: #334155;
   --color-gray-600: #475569;
-  --color-gray-500: #64748B;
-  --color-gray-400: #94A3B8;
-  --color-gray-300: #CBD5E1;
-  --color-gray-200: #E2E8F0;
-  --color-gray-100: #F1F5F9;
-  --color-gray-50: #F8FAFC;
+  --color-gray-500: #64748b;
+  --color-gray-400: #94a3b8;
+  --color-gray-300: #cbd5e1;
+  --color-gray-200: #e2e8f0;
+  --color-gray-100: #f1f5f9;
+  --color-gray-50: #f8fafc;
 }
 
 /* Enforce Dark Mode Universally */
 html,
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--color-gray-900);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--color-navy-950);
   color: var(--color-gray-100);
   color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /* Base styles for standard elements in deep dark mode */
 textarea,
 input,
 select {
-  background-color: var(--color-gray-800);
+  background-color: var(--color-navy-900);
   color: var(--color-white);
-  border-color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-700);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-electric-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Premium Card Styles */
+.premium-card {
+  background: linear-gradient(135deg, var(--color-navy-900) 0%, #162a4a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border-radius: 1rem;
+}
+
+.premium-gradient-text {
+  background: linear-gradient(to right, var(--color-electric-blue), var(--color-glow-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

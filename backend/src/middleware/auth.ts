@@ -8,8 +8,9 @@ export interface AuthRequest extends Request {
     user?: {
         id: number;
         username: string;
-        householdId: string;
-        role: string;
+        householdId?: string;
+        role?: string;
+        isSuperAdmin: boolean;
     };
 }
 
@@ -27,20 +28,18 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
         const secret = process.env.JWT_SECRET || 'fallback_secret_keep_safe';
         const decoded = jwt.verify(token, secret) as any;
 
-        // We get the user ID from the token. Now, find their most recent or primary household.
-        // In a multi-tenant SaaS, the user might select the active household, but for MVP we auto-select the first one.
         const user = await prisma.user.findUnique({
             where: { id: decoded.id },
             include: {
                 memberships: {
                     include: { household: true },
-                    take: 1 // Fetch primary household for now
+                    take: 1
                 }
             }
         });
 
-        if (!user || user.memberships.length === 0) {
-            res.status(403).json({ error: 'Forbidden: User does not belong to any household' });
+        if (!user) {
+            res.status(401).json({ error: 'Unauthorized: User not found' });
             return;
         }
 
@@ -49,8 +48,9 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
         req.user = {
             id: user.id,
             username: user.username,
-            householdId: membership.householdId,
-            role: membership.role
+            householdId: membership?.householdId,
+            role: membership?.role,
+            isSuperAdmin: user.isSuperAdmin
         };
 
         next();

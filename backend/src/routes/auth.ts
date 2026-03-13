@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body; // Actually, let's keep it username based for now. We can allow email later.
+    const { username, password } = req.body;
 
     try {
         const user = await prisma.user.findUnique({ where: { username } });
@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
             expiresIn: '7d',
         });
 
-        res.json({ token, username });
+        res.json({ token, username, isSuperAdmin: user.isSuperAdmin });
     } catch (error) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -50,6 +50,7 @@ router.post('/register', async (req, res) => {
             data: {
                 username,
                 email,
+                name,
                 password: hashedPassword
             }
         });
@@ -58,7 +59,7 @@ router.post('/register', async (req, res) => {
             expiresIn: '7d',
         });
 
-        res.status(201).json({ token, username });
+        res.status(201).json({ token, username, isSuperAdmin: user.isSuperAdmin });
     } catch (error) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -67,7 +68,6 @@ router.post('/register', async (req, res) => {
 import { authenticate, AuthRequest } from '../middleware/auth';
 
 router.get('/me', authenticate, async (req: AuthRequest, res) => {
-    // authenticate middleware already fetches user and active household
     if (!req.user) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -75,8 +75,35 @@ router.get('/me', authenticate, async (req: AuthRequest, res) => {
         id: req.user.id,
         username: req.user.username,
         householdId: req.user.householdId,
-        role: req.user.role
+        role: req.user.role,
+        isSuperAdmin: req.user.isSuperAdmin
     });
+});
+
+router.post('/change-password', authenticate, async (req: AuthRequest, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Incorrect current password' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword }
+        });
+
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 export default router;

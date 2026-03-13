@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { format } from 'date-fns';
-import { Trash2, UserPlus, Shield, User, Link as LinkIcon, Copy, CheckCircle2, Clock, X } from 'lucide-react';
+import { Trash2, Shield, User, Link as LinkIcon, Copy, CheckCircle2, Clock, X, Globe, Plus } from 'lucide-react';
+import clsx from 'clsx';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Member {
@@ -24,14 +25,22 @@ interface Invitation {
     createdAt: string;
 }
 
+interface Household {
+    id: string;
+    name: string;
+    createdAt: string;
+}
+
 export const Members = () => {
     const { user } = useAuth();
     const [members, setMembers] = useState<Member[]>([]);
     const [invitations, setInvitations] = useState<Invitation[]>([]);
+    const [households, setHouseholds] = useState<Household[]>([]);
     const [loading, setLoading] = useState(true);
     const [usernameInput, setUsernameInput] = useState('');
     const [roleInput, setRoleInput] = useState('MEMBER');
     const [showAddForm, setShowAddForm] = useState(false);
+    const [targetHouseholdId, setTargetHouseholdId] = useState<string>('');
 
     // Invitation states
     const [showInviteForm, setShowInviteForm] = useState(false);
@@ -41,18 +50,26 @@ export const Members = () => {
 
     const isOwner = user?.role === 'OWNER';
     const isAdmin = user?.role === 'ADMIN';
-    const canManageMembers = isOwner;
-    const canAdd = isOwner || isAdmin;
+    const isSuperAdmin = user?.isSuperAdmin;
+    const canManageMembers = isOwner || isSuperAdmin;
+    const canAdd = isOwner || isAdmin || isSuperAdmin;
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [membersData, invitesData] = await Promise.all([
+            const calls: Promise<any>[] = [
                 apiClient('/households/members'),
-                isAdmin || isOwner ? apiClient('/invitations') : Promise.resolve([])
-            ]);
+                isAdmin || isOwner || isSuperAdmin ? apiClient('/invitations') : Promise.resolve([])
+            ];
+            
+            if (isSuperAdmin) {
+                calls.push(apiClient('/households/all'));
+            }
+
+            const [membersData, invitesData, householdsData] = await Promise.all(calls);
             setMembers(membersData.members || []);
             setInvitations(invitesData || []);
+            if (householdsData) setHouseholds(householdsData);
         } catch (error) {
             console.error('Failed to fetch members data', error);
         } finally {
@@ -69,7 +86,11 @@ export const Members = () => {
         try {
             await apiClient('/households/members', {
                 method: 'POST',
-                body: JSON.stringify({ username: usernameInput, role: roleInput })
+                body: JSON.stringify({ 
+                    username: usernameInput, 
+                    role: roleInput,
+                    targetHouseholdId: isSuperAdmin ? targetHouseholdId : undefined
+                })
             });
             setUsernameInput('');
             setShowAddForm(false);
@@ -124,227 +145,234 @@ export const Members = () => {
     const RoleBadge = ({ role }: { role: string }) => {
         switch (role) {
             case 'OWNER':
-                return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary-900/40 text-primary-300 border border-primary-500/20"><Shield className="w-3 h-3 mr-1" /> Owner</span>;
+                return <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-emerald-400/10 text-emerald-400 border border-emerald-400/20"><Shield className="w-3 h-3 mr-1" /> Owner</span>;
             case 'ADMIN':
-                return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-900/40 text-blue-300 border border-blue-500/20"><Shield className="w-3 h-3 mr-1" /> Admin</span>;
+                return <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-electric-blue/10 text-electric-blue border border-electric-blue/20"><Shield className="w-3 h-3 mr-1" /> Admin</span>;
             default:
-                return <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gray-700 text-gray-300 border border-gray-600"><User className="w-3 h-3 mr-1" /> Member</span>;
+                return <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-gray-800 text-gray-400 border border-gray-700"><User className="w-3 h-3 mr-1" /> Member</span>;
         }
     };
 
-    if (loading) return (
-        <div className="space-y-4 pb-24">
-            <h1 className="text-2xl font-bold text-gray-100 mb-6">Profile & Members</h1>
-            {[1, 2, 3].map(i => (
-                <div key={i} className="bg-gray-800 rounded-2xl h-24 animate-pulse border border-gray-800/50"></div>
-            ))}
-        </div>
-    );
-
-    if (!canAdd && !canManageMembers) {
-        return (
-            <div className="pb-24">
-                <h1 className="text-2xl font-bold text-gray-100 mb-6">Profile</h1>
-                <div className="bg-gray-800 rounded-2xl p-6 text-center border border-gray-700 shadow-md">
-                    <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <User className="w-8 h-8 text-primary-500" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-200">{user?.username}</h3>
-                    <p className="text-sm text-gray-500 mt-1">Role: {user?.role}</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="space-y-6 pb-24 relative px-4">
-            <div>
-                <h1 className="text-2xl font-bold text-gray-100 mb-2">Household</h1>
-                <p className="text-sm text-gray-400">Manage members and invitations</p>
+        <div className="space-y-8 pb-24 px-4 max-w-4xl mx-auto relative">
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-2xl font-bold premium-gradient-text uppercase tracking-tight">Household</h1>
+                    <p className="text-gray-400 text-sm">Collective management & access control</p>
+                </div>
+                {isSuperAdmin && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-electric-blue/10 rounded-xl border border-electric-blue/20">
+                        <Globe size={14} className="text-electric-blue" />
+                        <span className="text-[10px] font-black text-electric-blue uppercase tracking-widest">Global Admin Access</span>
+                    </div>
+                )}
             </div>
 
-            {/* Invitation Section */}
+            {/* Invitations Section */}
             {canAdd && (
-                <section className="space-y-3">
+                <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1 flex items-center gap-2">
-                            <LinkIcon className="w-4 h-4" /> Invitation Links
+                        <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1 flex items-center gap-2">
+                            <LinkIcon className="w-3 h-3" /> External Access Link
                         </h2>
                         <button
                             onClick={() => setShowInviteForm(!showInviteForm)}
-                            className="text-xs font-bold text-primary-500 hover:text-primary-400 px-2 py-1 rounded-md bg-primary-500/10"
+                            className="p-2 bg-navy-900 border border-gray-800 rounded-lg text-electric-blue hover:text-white transition-colors"
                         >
-                            {showInviteForm ? 'Close' : 'Generate Link'}
+                            {showInviteForm ? <X size={16} /> : <Plus size={16} />}
                         </button>
                     </div>
 
                     {showInviteForm && (
-                        <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5 animate-in fade-in slide-in-from-top-4 duration-300">
-                            <form onSubmit={handleGenerateInvite} className="flex flex-col gap-4">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Role</label>
-                                        <select
-                                            value={inviteRole}
-                                            onChange={(e) => setInviteRole(e.target.value)}
-                                            className="block w-full rounded-xl border border-gray-700 bg-gray-900 text-white shadow-sm focus:border-primary-500 p-3 text-sm"
-                                        >
-                                            <option value="MEMBER">Member</option>
-                                            {isOwner && <option value="ADMIN">Admin</option>}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Expires In</label>
-                                        <select
-                                            value={inviteExpires}
-                                            onChange={(e) => setInviteExpires(Number(e.target.value))}
-                                            className="block w-full rounded-xl border border-gray-700 bg-gray-900 text-white shadow-sm focus:border-primary-500 p-3 text-sm"
-                                        >
-                                            <option value={1}>1 Day</option>
-                                            <option value={7}>7 Days</option>
-                                            <option value={30}>30 Days</option>
-                                        </select>
-                                    </div>
+                        <div className="premium-card p-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                            <form onSubmit={handleGenerateInvite} className="grid sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Role Assignment</label>
+                                    <select
+                                        value={inviteRole}
+                                        onChange={(e) => setInviteRole(e.target.value)}
+                                        className="w-full"
+                                    >
+                                        <option value="MEMBER">Member</option>
+                                        {(isOwner || isSuperAdmin) && <option value="ADMIN">Admin</option>}
+                                    </select>
                                 </div>
-                                <button type="submit" className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                    <LinkIcon className="w-4 h-4" /> Create Link
-                                </button>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Validity Period</label>
+                                    <select
+                                        value={inviteExpires}
+                                        onChange={(e) => setInviteExpires(Number(e.target.value))}
+                                        className="w-full"
+                                    >
+                                        <option value={1}>24 Hours</option>
+                                        <option value={7}>7 Days</option>
+                                        <option value={30}>30 Days</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-end">
+                                    <button type="submit" className="w-full bg-electric-blue text-white font-black py-2.5 rounded-xl uppercase tracking-widest text-xs hover:brightness-110 active:scale-95 transition-all">
+                                        Generate
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     )}
 
-                    <div className="space-y-2">
+                    <div className="grid sm:grid-cols-2 gap-4">
                         {invitations.map((invite) => (
-                            <div key={invite.id} className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700/50 flex flex-col gap-3">
-                                <div className="flex justify-between items-start">
+                            <div key={invite.id} className="premium-card p-4 space-y-3">
+                                <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-2">
                                         <RoleBadge role={invite.role} />
-                                        <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                                            <Clock className="w-3 h-3" /> Exp: {format(new Date(invite.expiresAt), 'MMM dd')}
+                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter flex items-center gap-1">
+                                            <Clock size={10} /> {format(new Date(invite.expiresAt), 'MMM dd')}
                                         </span>
                                     </div>
                                     <button
                                         onClick={() => handleRevokeInvite(invite.id)}
-                                        className="text-gray-500 hover:text-red-400 p-1 rounded-md hover:bg-red-400/10"
+                                        className="text-gray-600 hover:text-red-400 p-1 rounded transition-colors"
                                     >
-                                        <X className="w-4 h-4" />
+                                        <X size={14} />
                                     </button>
                                 </div>
                                 <div className="flex gap-2">
                                     <input
                                         readOnly
                                         value={`${window.location.origin}/accept-invite?token=${invite.id}`}
-                                        className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-400 focus:outline-none"
+                                        className="flex-1 bg-navy-950 border border-gray-800 rounded-lg px-3 py-1.5 text-[10px] text-gray-500 focus:outline-none"
                                     />
                                     <button
                                         onClick={() => copyToClipboard(invite.id)}
-                                        className={`px-3 py-2 rounded-lg flex items-center justify-center transition-all ${copiedId === invite.id ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                                        className={clsx(
+                                            "px-3 py-1.5 rounded-lg flex items-center justify-center transition-all",
+                                            copiedId === invite.id ? 'bg-emerald-500 text-white' : 'bg-navy-900 text-gray-400 hover:text-white'
+                                        )}
                                     >
-                                        {copiedId === invite.id ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                        {copiedId === invite.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
                                     </button>
                                 </div>
                             </div>
                         ))}
-                        {invitations.length === 0 && !showInviteForm && (
-                            <div className="bg-gray-800/20 rounded-2xl p-4 border border-dashed border-gray-700 text-center">
-                                <p className="text-xs text-gray-500 italic">No active invitation links.</p>
-                            </div>
-                        )}
                     </div>
-                </section>
+                </div>
             )}
 
             {/* Current Members Section */}
-            <section className="space-y-3">
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest px-1">Members</h2>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">Active Members</h2>
+                    {canAdd && (
+                        <button
+                            onClick={() => setShowAddForm(true)}
+                            className="text-[10px] font-black text-electric-blue uppercase tracking-widest px-3 py-1 rounded-full border border-electric-blue/20 hover:bg-electric-blue/10 transition-all"
+                        >
+                            Add New +
+                        </button>
+                    )}
+                </div>
 
-                {showAddForm && canAdd && (
-                    <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-gray-100">Add Directly</h2>
-                            <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-200 text-sm">
-                                Cancel
+                {showAddForm && (
+                    <div className="premium-card p-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-sm font-black text-white uppercase tracking-widest">Internal Assignment</h2>
+                            <button onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-white">
+                                <X size={18} />
                             </button>
                         </div>
-                        <form onSubmit={handleAddMember} className="flex flex-col gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Username</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={usernameInput}
-                                    onChange={(e) => setUsernameInput(e.target.value)}
-                                    placeholder="e.g. johndoe"
-                                    className="block w-full rounded-xl border border-gray-700 bg-gray-900 text-white shadow-sm focus:border-primary-500 p-3"
-                                />
+                        <form onSubmit={handleAddMember} className="space-y-4">
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Identity Handle</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={usernameInput}
+                                        onChange={(e) => setUsernameInput(e.target.value)}
+                                        placeholder="e.g. ntonsite"
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Role Authority</label>
+                                    <select
+                                        value={roleInput}
+                                        onChange={(e) => setRoleInput(e.target.value)}
+                                        className="w-full"
+                                    >
+                                        <option value="MEMBER">Member</option>
+                                        {(isOwner || isSuperAdmin) && <option value="ADMIN">Admin</option>}
+                                    </select>
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Role</label>
-                                <select
-                                    value={roleInput}
-                                    onChange={(e) => setRoleInput(e.target.value)}
-                                    className="block w-full rounded-xl border border-gray-700 bg-gray-900 text-white shadow-sm focus:border-primary-500 p-3"
-                                >
-                                    <option value="MEMBER">Member</option>
-                                    {isOwner && <option value="ADMIN">Admin</option>}
-                                </select>
-                            </div>
-                            <p className="text-xs text-gray-500 leading-relaxed italic">
-                                * Use this to add someone who already has an account.
-                            </p>
-                            <button type="submit" className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl active:scale-95 transition-transform mt-2">
-                                Add User
+                            
+                            {isSuperAdmin && (
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-widest">Target Unit (SuperAdmin Only)</label>
+                                    <select
+                                        value={targetHouseholdId}
+                                        onChange={(e) => setTargetHouseholdId(e.target.value)}
+                                        className="w-full border-electric-blue/30"
+                                        required
+                                    >
+                                        <option value="">Current Household</option>
+                                        {households.map(h => (
+                                            <option key={h.id} value={h.id}>{h.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <button type="submit" className="w-full bg-electric-blue text-white font-black py-4 rounded-xl shadow-xl uppercase tracking-widest text-xs hover:brightness-110 active:scale-95 transition-all">
+                                Execute Member Addition
                             </button>
                         </form>
                     </div>
                 )}
 
-                <div className="space-y-3">
+                <div className="grid gap-3">
                     {members.map((member) => (
-                        <div key={member.id} className="bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-700 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="h-12 w-12 rounded-xl bg-gray-900 flex items-center justify-center text-primary-400 font-bold text-xl border border-gray-700">
+                        <div key={member.id} className="premium-card p-4 flex items-center justify-between group">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 rounded-2xl bg-navy-950 flex items-center justify-center text-electric-blue font-black text-xl border border-gray-800 shadow-inner group-hover:scale-105 transition-transform">
                                     {(member.user.name || member.user.username).charAt(0).toUpperCase()}
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <p className="text-base font-bold text-gray-100">
+                                        <p className="text-sm font-black text-gray-100 uppercase tracking-tight">
                                             {member.user.name || member.user.username}
                                         </p>
-                                        {member.user.id === user?.id && <span className="text-[10px] font-bold uppercase tracking-wider text-primary-500 bg-primary-900/20 px-1.5 py-0.5 rounded-md">You</span>}
+                                        {member.user.id === user?.id && <span className="text-[9px] font-black uppercase tracking-tighter text-electric-blue bg-electric-blue/10 px-1.5 py-0.5 rounded border border-electric-blue/20">Self</span>}
                                     </div>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className="text-sm font-medium text-gray-400">@{member.user.username}</span>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <span className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">@{member.user.username}</span>
                                         <RoleBadge role={member.role} />
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1.5">
-                                        Joined {format(new Date(member.joinedAt), 'MMM dd, yyyy')}
+                                    <p className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter mt-1.5">
+                                        Operational Since {format(new Date(member.joinedAt), 'MMM dd, yyyy')}
                                     </p>
                                 </div>
                             </div>
 
-                            {canManageMembers && member.user.id !== user?.id && (
+                            {(canManageMembers || isSuperAdmin) && member.user.id !== user?.id && (
                                 <button
                                     onClick={() => handleDeleteMember(member.id)}
-                                    className="p-2.5 text-gray-500 hover:text-red-400 bg-gray-900/50 hover:bg-red-400/10 rounded-xl transition-colors border border-transparent hover:border-red-500/20"
-                                    title="Remove from household"
+                                    className="p-3 text-gray-600 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                                    title="Revoke Membership"
                                 >
-                                    <Trash2 className="w-5 h-5" />
+                                    <Trash2 size={20} />
                                 </button>
                             )}
                         </div>
                     ))}
                 </div>
-            </section>
+            </div>
 
-            {canAdd && !showAddForm && !showInviteForm && (
-                <button
-                    onClick={() => setShowAddForm(true)}
-                    className="fixed bottom-20 right-6 w-14 h-14 bg-primary-600 rounded-full flex items-center justify-center text-white shadow-[0_4px_14px_0_rgba(60,130,107,0.39)] hover:bg-primary-500 active:scale-90 transition-all z-40"
-                    title="Add Member Directly"
-                >
-                    <UserPlus className="w-6 h-6" />
-                </button>
+            {loading && (
+                <div className="grid gap-4">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="premium-card h-24 animate-pulse"></div>
+                    ))}
+                </div>
             )}
         </div>
     );

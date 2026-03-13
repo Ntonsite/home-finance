@@ -6,6 +6,7 @@ export interface User {
     username: string;
     householdId: string;
     role: string;
+    isSuperAdmin: boolean;
 }
 
 interface AuthContextType {

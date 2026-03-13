@@ -7,6 +7,44 @@ const prisma = new PrismaClient();
 
 router.use(authenticate);
 
+// Create a new household
+router.post('/', async (req: AuthRequest, res) => {
+    try {
+        const { name } = req.body;
+        if (!name) return res.status(400).json({ error: 'Household name is required' });
+
+        const household = await prisma.household.create({
+            data: {
+                name,
+                members: {
+                    create: {
+                        userId: req.user!.id,
+                        role: 'OWNER'
+                    }
+                }
+            }
+        });
+
+        res.status(201).json(household);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create household' });
+    }
+});
+
+// List all households (SuperAdmin only)
+router.get('/all', requireRole(['SUPERADMIN']), async (req: AuthRequest, res) => {
+    try {
+        const households = await prisma.household.findMany({
+            include: {
+                _count: { select: { members: true } }
+            }
+        });
+        res.json(households);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch all households' });
+    }
+});
+
 // List household members
 router.get('/members', async (req: AuthRequest, res) => {
     try {
@@ -27,6 +65,8 @@ router.get('/members', async (req: AuthRequest, res) => {
 router.post('/members', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest, res) => {
     try {
         const { username, role } = req.body;
+        const targetHouseholdId = req.user!.householdId; // Or from body if SuperAdmin
+        
         if (!username || !role) {
             return res.status(400).json({ error: 'Username and role are required' });
         }
@@ -39,11 +79,10 @@ router.post('/members', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest
             return res.status(404).json({ error: 'User not found. They must register first.' });
         }
 
-        // Check if already in household
         const existingMember = await prisma.householdMember.findUnique({
             where: {
                 householdId_userId: {
-                    householdId: req.user!.householdId,
+                    householdId: targetHouseholdId!,
                     userId: userToAdd.id
                 }
             }
@@ -55,7 +94,7 @@ router.post('/members', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest
 
         const newMember = await prisma.householdMember.create({
             data: {
-                householdId: req.user!.householdId,
+                householdId: targetHouseholdId!,
                 userId: userToAdd.id,
                 role
             },
@@ -74,11 +113,11 @@ router.post('/members', requireRole(['OWNER', 'ADMIN']), async (req: AuthRequest
 // Delete member
 router.delete('/members/:id', requireRole(['OWNER']), async (req: AuthRequest, res) => {
     try {
-        const { id } = req.params; // HouseholdMember ID
+        const { id } = req.params;
 
         const member = await prisma.householdMember.findUnique({ where: { id: Number(id) } });
         if (!member) return res.status(404).json({ error: 'Member not found' });
-        if (member.householdId !== req.user?.householdId) return res.status(403).json({ error: 'Forbidden' });
+        if (!req.user?.isSuperAdmin && member.householdId !== req.user?.householdId) return res.status(403).json({ error: 'Forbidden' });
         if (member.userId === req.user?.id) return res.status(400).json({ error: 'Cannot remove yourself' });
 
         await prisma.householdMember.delete({ where: { id: Number(id) } });
@@ -103,7 +142,6 @@ router.post('/accept-invite', async (req: AuthRequest, res) => {
         if (invitation.usedAt) return res.status(400).json({ error: 'Invitation has already been used' });
         if (invitation.expiresAt < new Date()) return res.status(400).json({ error: 'Invitation has expired' });
 
-        // Check if user is already a member of this household
         const existingMember = await prisma.householdMember.findUnique({
             where: {
                 householdId_userId: {
@@ -117,7 +155,6 @@ router.post('/accept-invite', async (req: AuthRequest, res) => {
             return res.status(400).json({ error: 'You are already a member of this household' });
         }
 
-        // Add user to household
         const newMember = await prisma.householdMember.create({
             data: {
                 householdId: invitation.householdId,
@@ -126,7 +163,6 @@ router.post('/accept-invite', async (req: AuthRequest, res) => {
             }
         });
 
-        // Mark invitation as used
         await prisma.invitation.update({
             where: { id: token },
             data: {

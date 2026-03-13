@@ -8,6 +8,7 @@ import { Expenses } from './pages/Expenses';
 import { Categories } from './pages/Categories';
 import { Budgets } from './pages/Budgets';
 import { Members } from './pages/Members';
+import { Settings } from './pages/Settings';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
               <Route path="/categories" element={<Categories />} />
               <Route path="/budgets" element={<Budgets />} />
               <Route path="/members" element={<Members />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
 
