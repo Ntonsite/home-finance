@@ -82,5 +82,6 @@ select:focus {
 .premium-gradient-text {
   background: linear-gradient(to right, var(--color-electric-blue), var(--color-glow-blue));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }

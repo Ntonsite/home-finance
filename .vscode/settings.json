@@ -1,0 +1,5 @@
+{
+  // Tell the VS Code CSS language server to ignore unknown at-rules from Tailwind v4
+  // (@theme, @layer, @utility, @variant, etc.)
+  "css.lint.unknownAtRules": "ignore"
+}

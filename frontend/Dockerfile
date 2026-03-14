@@ -1,30 +1,22 @@
+# ── Stage 1: build ──────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# 1. Install deps — cached unless package*.json changes
 COPY package*.json ./
-RUN npm install
+RUN npm ci --prefer-offline
 
+# 2. Copy source & build
 COPY . .
 RUN npm run build
 
+# ── Stage 2: serve via nginx ─────────────────────────────────────────────────
 FROM nginx:alpine
 
+# Drop default config and drop in ours
 COPY --from=builder /app/dist /usr/share/nginx/html/homefinance
-
-# Copy custom nginx config if necessary, or use default
-# Here we add a basic config to support React Router
-RUN echo 'server { \
-    listen 80; \
-    location /homefinance { \
-        root /usr/share/nginx/html; \
-        index index.html index.htm; \
-        try_files $uri $uri/ /homefinance/index.html; \
-    } \
-    location / { \
-        return 301 /homefinance; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
