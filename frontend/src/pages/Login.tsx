@@ -64,16 +64,14 @@ export const Login = () => {
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
                                 Username
                             </label>
-                            <div className="relative rounded-xl shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                                    <User className="h-4 w-4 text-gray-500" />
-                                </div>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none z-10" />
                                 <input
                                     type="text"
                                     required
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    className="block w-full pl-10 pr-3 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:ring-primary-500 focus:border-primary-500 p-3.5 transition-colors [&::-webkit-credentials-auto-fill-button]:opacity-0 [&::-webkit-credentials-auto-fill-button]:pointer-events-none [&::-webkit-contacts-auto-fill-button]:opacity-0"
+                                    className="block w-full py-3.5 pl-10 pr-4 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                                     placeholder="Enter your username"
                                     autoComplete="username"
                                 />
@@ -84,16 +82,14 @@ export const Login = () => {
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
                                 Password
                             </label>
-                            <div className="relative rounded-xl shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
-                                    <Lock className="h-4 w-4 text-gray-500" />
-                                </div>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none z-10" />
                                 <input
                                     type="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-10 pr-3 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:ring-primary-500 focus:border-primary-500 p-3.5 transition-colors [&::-webkit-credentials-auto-fill-button]:opacity-0 [&::-webkit-credentials-auto-fill-button]:pointer-events-none [&::-webkit-contacts-auto-fill-button]:opacity-0"
+                                    className="block w-full py-3.5 pl-10 pr-4 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                                     placeholder="••••••••"
                                     autoComplete="current-password"
                                 />
