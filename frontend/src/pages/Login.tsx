@@ -65,15 +65,15 @@ export const Login = () => {
                                 Username
                             </label>
                             <div className="relative rounded-xl shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <User className="h-5 w-5 text-gray-500" />
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                                    <User className="h-4 w-4 text-gray-500" />
                                 </div>
                                 <input
                                     type="text"
                                     required
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    className="block w-full pl-11 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:ring-primary-500 focus:border-primary-500 p-3.5 transition-colors"
+                                    className="block w-full pl-10 pr-3 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:ring-primary-500 focus:border-primary-500 p-3.5 transition-colors [&::-webkit-credentials-auto-fill-button]:opacity-0 [&::-webkit-credentials-auto-fill-button]:pointer-events-none [&::-webkit-contacts-auto-fill-button]:opacity-0"
                                     placeholder="Enter your username"
                                     autoComplete="username"
                                 />
@@ -85,15 +85,15 @@ export const Login = () => {
                                 Password
                             </label>
                             <div className="relative rounded-xl shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-500" />
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none z-10">
+                                    <Lock className="h-4 w-4 text-gray-500" />
                                 </div>
                                 <input
                                     type="password"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-11 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:ring-primary-500 focus:border-primary-500 p-3.5 transition-colors"
+                                    className="block w-full pl-10 pr-3 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:ring-primary-500 focus:border-primary-500 p-3.5 transition-colors [&::-webkit-credentials-auto-fill-button]:opacity-0 [&::-webkit-credentials-auto-fill-button]:pointer-events-none [&::-webkit-contacts-auto-fill-button]:opacity-0"
                                     placeholder="••••••••"
                                     autoComplete="current-password"
                                 />
