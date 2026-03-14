@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
-import { Lock, User } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 export const Login = () => {
     const [username, setUsername] = useState('');
@@ -64,36 +64,30 @@ export const Login = () => {
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
                                 Username
                             </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none z-10" />
-                                <input
-                                    type="text"
-                                    required
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="block w-full py-3.5 pl-10 pr-4 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                                    placeholder="Enter your username"
-                                    autoComplete="username"
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                required
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="block w-full p-3.5 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                                placeholder="Enter your username"
+                                autoComplete="username"
+                            />
                         </div>
 
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">
                                 Password
                             </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none z-10" />
-                                <input
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full py-3.5 pl-10 pr-4 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                                    placeholder="••••••••"
-                                    autoComplete="current-password"
-                                />
-                            </div>
+                            <input
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="block w-full p-3.5 bg-gray-900/50 border border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                            />
                         </div>
 
                         <div className="pt-2">

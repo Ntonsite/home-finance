@@ -73,11 +73,10 @@ export const Dashboard = () => {
                 <div className="flex gap-2">
                     {/* Month picker */}
                     <div className="flex-1 relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none z-10" />
                         <select
                             value={selectedMonth}
                             onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                            className="w-full appearance-none rounded-xl bg-navy-900 border border-gray-700 text-white font-medium py-3 pl-10 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                            className="w-full appearance-none rounded-xl bg-navy-900 border border-gray-700 text-white font-medium py-3 px-4 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
                         >
                             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                                 <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</option>
@@ -91,11 +90,10 @@ export const Dashboard = () => {
                     </div>
                     {/* Year picker */}
                     <div className="flex-1 relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none z-10" />
                         <select
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(Number(e.target.value))}
-                            className="w-full appearance-none rounded-xl bg-navy-900 border border-gray-700 text-white font-medium py-3 pl-10 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
+                            className="w-full appearance-none rounded-xl bg-navy-900 border border-gray-700 text-white font-medium py-3 px-4 pr-8 shadow-sm focus:outline-none focus:ring-2 focus:ring-electric-blue focus:border-electric-blue transition-colors"
                         >
                             {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map((y) => (
                                 <option key={y} value={y}>{y}</option>
