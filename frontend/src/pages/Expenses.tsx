@@ -357,11 +357,16 @@ export const Expenses = () => {
                         setFormData(prev => ({ ...prev, isPersonal: viewMode === 'personal' }));
                         setShowAddForm(true);
                     }}
-                    className="fixed bottom-8 right-8 w-16 h-16 bg-electric-blue rounded-2xl flex items-center justify-center text-white shadow-2xl hover:scale-105 active:scale-90 transition-all z-40 group"
-                    aria-label="Add Expense"
+                    className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 group flex items-center gap-2"
+                    aria-label="Add Transaction"
                 >
-                    <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform" />
-                    <div className="absolute inset-0 rounded-2xl bg-white/20 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    {/* Persistent glow ring — keeps button unmissable on mobile */}
+                    <span className="absolute inset-0 rounded-2xl bg-electric-blue/40 blur-md scale-110 md:hidden" />
+
+                    <span className="relative flex items-center gap-2 bg-electric-blue text-white px-4 py-3.5 md:p-0 md:w-16 md:h-16 md:rounded-2xl rounded-xl shadow-[0_0_24px_rgba(59,130,246,0.55)] hover:shadow-[0_0_36px_rgba(59,130,246,0.85)] hover:scale-105 active:scale-90 transition-all md:justify-center">
+                        <Plus className="w-6 h-6 md:w-8 md:h-8 group-hover:rotate-90 transition-transform duration-200 shrink-0" />
+                        <span className="text-sm font-black uppercase tracking-widest md:hidden">Add</span>
+                    </span>
                 </button>
             )}
         </div>
